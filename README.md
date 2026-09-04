@@ -1,5 +1,4 @@
 # RecoverAI
-RecoverAI
 AI Revenue Recovery Agent for Razorpay merchants
 
 Detect failed payments. Diagnose why they failed. Decide the next-best recovery action. Execute safely. Verify payment. Measure recovered revenue.
