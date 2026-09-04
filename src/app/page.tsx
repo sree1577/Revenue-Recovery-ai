@@ -1,0 +1,18 @@
+import Link from "next/link";
+import { demoCases } from "@/lib/demo-data";
+import { CsvImport } from "@/components/csv-import";
+import { DashboardMetrics } from "@/components/dashboard-metrics";
+import { getDashboardData } from "@/lib/dashboard";
+import "./import.css";
+import "./dashboard.css";
+const money=new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
+
+export default async function Home(){const dashboardData=await getDashboardData();return <main className="shell">
+ <aside><div className="brand"><i>R</i> Recover<b>AI</b></div><nav aria-label="Primary navigation"><Link href="/" className="on" aria-current="page">▦ Command Center</Link><Link href="/recovery-queue">☷ Recovery Queue</Link><Link href="/import">↑ Import Transactions</Link><Link href="/agent-control">✦ Agent Control</Link><Link href="/audit">♢ Audit &amp; Safety</Link><Link href="/integrations">⌘ Integrations</Link><Link href="/settings">⚙ Settings</Link></nav><div className="merchant"><small>DEMO WORKSPACE</small><strong>RevenueRecoverAI</strong><span>Test mode</span></div></aside>
+ <section className="content"><header><div><em>COMMAND CENTER</em><h1>Revenue Recovery</h1><p>Monitor failed payments and recover revenue safely.</p></div><div className="actions"><span>● Agent running</span><Link href="/import" className="button outline">↑ Upload CSV</Link><Link href="/agent-control" className="button">▶ Run recovery batch</Link></div></header>
+ <DashboardMetrics initialData={dashboardData} />
+ <div className="columns"><section className="panel queue"><div className="title"><div><h2>Recovery Queue</h2><p>AI-prioritized failed transactions</p></div><Link href="/recovery-queue" className="link">View all →</Link></div><div className="scroll"><table><thead><tr><th>Customer</th><th>Amount</th><th>Failure</th><th>Score</th><th>Next action</th><th>Status</th></tr></thead><tbody>{demoCases.map(({transaction:t,decision:d})=><tr key={t.id}><td><strong>{t.customer}</strong><small>{t.id} · {t.method}</small></td><td><strong>{money.format(t.amount)}</strong></td><td>{t.failureReason.replaceAll("_"," ").toLowerCase()}</td><td><b className={`score ${d.score>70?"hi":"med"}`}>{d.score}</b></td><td>{d.action}</td><td><span className={`pill ${d.stopped?"stopped":d.requiresApproval?"approval":"ready"}`}>{d.stopped?"Stopped":d.requiresApproval?"Approval":"Ready"}</span></td></tr>)}</tbody></table></div></section>
+ <section className="panel agent"><div className="agenthead"><i>✦</i><div><h2>Recovery Agent</h2><p>Live decision engine</p></div><b>LIVE</b></div><Step n="1" h="Observe" p="5 payment failures ingested" done/><Step n="2" h="Diagnose" p="Failure reasons classified" done/><Step n="3" h="Policy check" p="Consent, attempts and risk checked" current/><Step n="4" h="Recover" p="Create link after approval"/><div className="waiting"><span>Awaiting approval</span><b>2 cases</b></div></section></div>
+ <section className="panel selected"><div><em>SELECTED CASE · PAY-1048</em><h2>Failed UPI payment</h2><div className="amount">₹2,499 <span>High priority</span></div></div><div className="diagnosis"><small>AGENT DIAGNOSIS</small><strong>UPI request expired</strong><p>Not debited. Fresh link has an <b>86% recovery probability</b>.</p></div><div className="diagnosis"><small>POLICY CHECKS</small><p>✓ Consent available</p><p>✓ Attempt limit (1/3)</p><p>✓ Safe contact window</p></div><Link href="/cases/PAY-1048" className="button">Review &amp; approve case</Link></section>
+ <CsvImport/></section></main>}
+function Step({n,h,p,done,current}:{n:string;h:string;p:string;done?:boolean;current?:boolean}){return <div className={`step ${done?"done":""} ${current?"current":""}`}><b>{n}</b><div><strong>{h}</strong><p>{p}</p></div></div>}

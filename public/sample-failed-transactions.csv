@@ -1,0 +1,8 @@
+transaction_id,customer_name,email,phone,amount_rupees,payment_method,failure_reason,error_code,error_step,error_source,attempts,previous_successes,consent_email,consent_sms,consent_whatsapp,occurred_at
+PAY-2001,Aarav Kumar,aarav@example.test,+919900000001,2499,UPI,UPI_REQUEST_EXPIRED,UPI_TIMEOUT,collect,bank,1,8,true,false,false,2026-09-01T10:00:00+05:30
+PAY-2002,Meera Rao,meera@example.test,+919900000002,8900,Netbanking,BANK_TIMEOUT,BANK_TIMEOUT,authorization,bank,1,5,true,true,false,2026-09-01T10:15:00+05:30
+PAY-2003,Vikram Shah,vikram@example.test,+919900000003,18500,Card,CARD_EXPIRED,CARD_EXPIRED,authorization,issuer,1,11,true,false,false,2026-09-01T10:30:00+05:30
+PAY-2004,Ananya Singh,ananya@example.test,+919900000004,52000,Card,CARD_DECLINED,CARD_DECLINED,authorization,issuer,2,3,true,false,false,2026-09-01T10:45:00+05:30
+PAY-2005,Rohan Das,rohan@example.test,+919900000005,3999,Card,SUSPECTED_FRAUD,FRAUD_SUSPECTED,authorization,risk,1,0,true,false,false,2026-09-01T11:00:00+05:30
+PAY-2006,Sana Ali,sana@example.test,+919900000006,1299,UPI,INCORRECT_OTP,OTP_FAILED,authentication,customer,1,6,true,false,true,2026-09-01T11:15:00+05:30
+PAY-2007,Kiran Patel,kiran@example.test,+919900000007,7499,UPI,INSUFFICIENT_FUNDS,INSUFFICIENT_FUNDS,authorization,issuer,0,2,true,false,false,2026-09-01T11:30:00+05:30

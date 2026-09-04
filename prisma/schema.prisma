@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionStatus {
+  FAILED
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum RecoveryCaseStatus {
+  DETECTED
+  ANALYZED
+  AWAITING_APPROVAL
+  APPROVED
+  ACTION_SCHEDULED
+  PAYMENT_LINK_CREATED
+  CONTACTED
+  RECOVERED
+  STOPPED
+  ESCALATED
+  EXPIRED
+}
+
+enum ActionType {
+  WAIT
+  CREATE_PAYMENT_LINK
+  SEND_EMAIL
+  SEND_SMS
+  SEND_WHATSAPP
+  REQUEST_ALTERNATIVE_METHOD
+  ESCALATE
+  STOP
+}
+
+enum ActionStatus {
+  PENDING
+  APPROVED
+  EXECUTED
+  FAILED
+  CANCELLED
+  SIMULATED
+}
+
+enum AuditActor {
+  SYSTEM
+  AGENT
+  MERCHANT
+  RAZORPAY
+  CUSTOMER
+}
+
+model Customer {
+  id                         String         @id @default(cuid())
+  externalId                 String?        @unique
+  name                       String
+  email                      String?
+  phone                      String?
+  preferredChannel           String?
+  timezone                   String         @default("Asia/Kolkata")
+  consentEmail               Boolean        @default(false)
+  consentSms                 Boolean        @default(false)
+  consentWhatsApp            Boolean        @default(false)
+  doNotContact               Boolean        @default(false)
+  previousSuccessfulPayments Int            @default(0)
+  previousFailedPayments     Int            @default(0)
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+  transactions               Transaction[]
+}
+
+model Transaction {
+  id                    String            @id @default(cuid())
+  externalTransactionId String            @unique
+  razorpayPaymentId     String?           @unique
+  razorpayOrderId       String?
+  customerId            String
+  amountPaise           Int
+  currency              String            @default("INR")
+  paymentMethod         String
+  status                TransactionStatus @default(FAILED)
+  errorCode             String?
+  errorStep             String?
+  errorReason           String?
+  errorSource           String?
+  errorDescription      String?
+  attemptCount          Int               @default(0)
+  occurredAt            DateTime
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  customer              Customer          @relation(fields: [customerId], references: [id])
+  recoveryCase          RecoveryCase?
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model RecoveryCase {
+  id                       String             @id @default(cuid())
+  caseNumber               String             @unique
+  transactionId            String             @unique
+  status                   RecoveryCaseStatus @default(DETECTED)
+  priorityScore            Int                @default(0)
+  recoveryProbability      Int                @default(0)
+  failureCategory          String
+  recommendedAction        String
+  recommendedChannel       String?
+  recommendedDelayMinutes  Int                @default(0)
+  decisionExplanation      String
+  requiresApproval         Boolean            @default(false)
+  approvedAt               DateTime?
+  stoppedAt                DateTime?
+  stopReason               String?
+  paymentLinkId            String?            @unique
+  paymentLinkUrl           String?
+  paymentLinkExpiresAt     DateTime?
+  recoveredAmountPaise     Int?
+  recoveredAt              DateTime?
+  nextActionAt             DateTime?
+  recoveryAttemptCount     Int                @default(0)
+  maxRecoveryAttempts     Int                @default(3)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  transaction              Transaction        @relation(fields: [transactionId], references: [id])
+  actions                  RecoveryAction[]
+  auditLogs                AuditLog[]
+
+  @@index([status])
+  @@index([priorityScore])
+}
+
+model RecoveryAction {
+  id              String         @id @default(cuid())
+  recoveryCaseId  String
+  type            ActionType
+  status          ActionStatus   @default(PENDING)
+  channel         String?
+  message         String?
+  scheduledAt     DateTime?
+  executedAt      DateTime?
+  failureMessage  String?
+  idempotencyKey  String         @unique
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  recoveryCase    RecoveryCase   @relation(fields: [recoveryCaseId], references: [id], onDelete: Cascade)
+
+  @@index([recoveryCaseId, status])
+}
+
+model AuditLog {
+  id              String        @id @default(cuid())
+  recoveryCaseId  String?
+  eventType       String
+  actor           AuditActor
+  decision        String?
+  inputSnapshot   Json?
+  outputSnapshot  Json?
+  policyVersion   String
+  createdAt       DateTime      @default(now())
+  recoveryCase    RecoveryCase? @relation(fields: [recoveryCaseId], references: [id], onDelete: SetNull)
+
+  @@index([recoveryCaseId, createdAt])
+  @@index([actor, createdAt])
+}
+
+model WebhookEvent {
+  id                String    @id @default(cuid())
+  provider          String
+  externalEventId   String    @unique
+  eventType         String
+  payload           Json
+  signatureVerified Boolean   @default(false)
+  processedAt       DateTime?
+  processingError   String?
+  createdAt         DateTime  @default(now())
+
+  @@index([provider, eventType])
+}
+
+model AgentSettings {
+  id                       String   @id @default("default")
+  enabled                  Boolean  @default(true)
+  maxRecoveryAttempts      Int      @default(3)
+  quietHoursStart          Int      @default(21)
+  quietHoursEnd            Int      @default(9)
+  approvalThresholdPaise   Int      @default(1000000)
+  defaultRecoveryDelayMin  Int      @default(30)
+  demoMode                 Boolean  @default(true)
+  aiMessageGeneration      Boolean  @default(true)
+  simulatedCommunication   Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
